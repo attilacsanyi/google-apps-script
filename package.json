@@ -1,0 +1,29 @@
+{
+  "name": "google-apps-script",
+  "version": "1.0.0",
+  "description": "Useful Google Apps Script",
+  "main": "index.js",
+  "scripts": {
+    "sync": "clasp push --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/attilacsanyi/google-apps-script.git"
+  },
+  "keywords": [
+    "google",
+    "apps-script",
+    "google-apps-script"
+  ],
+  "author": "Attila Csanyi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/attilacsanyi/google-apps-script/issues"
+  },
+  "homepage": "https://github.com/attilacsanyi/google-apps-script#readme",
+  "devDependencies": {
+    "@types/cheerio": "0.22.31",
+    "@types/google-apps-script": "1.0.57",
+    "cheerio": "1.0.0-rc.12"
+  }
+}
