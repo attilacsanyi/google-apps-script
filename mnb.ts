@@ -22,6 +22,23 @@ const MNB = (currency: Currency = "GBP", dateStr: string = "2021.04.18.") => {
 };
 
 /**
+ * Return the price of a given crypto
+ *
+ * @param {text} crypto The cryptocurrency long name (Bitcoin, Medieval Empires, etc.).
+ * @return Current Coinmarketcap price of a crypto
+ * @customfunction
+ */
+const CRYPTO = (crypto = "bitcoin") => {
+  // console.log(`Input crypto: ${crypto}`);
+  const hyphenedName = crypto.replace(/\s/g, "-");
+
+  // https://coinmarketcap.com/currencies/bitcoin/
+  return readCryptoPrice(
+    `https://coinmarketcap.com/currencies/${hyphenedName}`
+  );
+};
+
+/**
  * Adjust date to previous Friday if it was weekend
  */
 const adjustDate = (dateStr: string) => {
@@ -51,17 +68,32 @@ const adjustDate = (dateStr: string) => {
 const readMNBPrice = (currency: Currency, url: string): number => {
   const resp = UrlFetchApp.fetch(url).getContentText();
   const $ = Cheerio.load(resp);
-  const currencyPrice = convertNumber($(priceSelector(currency)).text());
+  const currencyPrice = convertNumber(
+    $(priceSelector(currency)).text(),
+    "hu-HU"
+  );
 
   // console.log(`Output price: ${currencyPrice} (414.50 ${currency})`);
 
   return currencyPrice;
 };
 
+const readCryptoPrice = (url: string): number => {
+  const resp = UrlFetchApp.fetch(url).getContentText();
+  const $ = Cheerio.load(resp);
+  const cryptoPrice = convertNumber(
+    $(".priceSection > .priceTitle > .priceValue > span").text()
+  );
+
+  // console.log(`Crypto price: ${cryptoPrice}`);
+
+  return cryptoPrice;
+};
+
 /**
  * Courtesy: https://tutorial.eyehunts.com/js/locale-string-to-number-javascript-example-code/
  */
-const convertNumber = (numStr: string, locale = "hu-HU") => {
+const convertNumber = (numStr: string, locale = "en-US") => {
   const { format } = new Intl.NumberFormat(locale);
   const match = /^0(.)1$/.exec(format(0.1));
   if (match) {
