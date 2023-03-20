@@ -11,13 +11,13 @@ type Currency = "GBP" | "USD" | "EUR";
  * @return MNB price of a currency on the  date
  * @customfunction
  */
-const MNB = (currency: Currency = "GBP", dateStr: string = "2021.04.18.") => {
+const mnb = (currency: Currency = "GBP", dateStr: string = "2021.04.18.") => {
   // console.log(`Input currency: ${currency}, date: ${dateStr}`);
 
   // https://www.mnb.hu/arfolyam-tablazat?query=daily,2023.02.14.
-  return readMNBPrice(
+  return readMNBPrice_(
     currency,
-    `https://www.mnb.hu/arfolyam-tablazat?query=daily,${adjustDate(dateStr)}`
+    `https://www.mnb.hu/arfolyam-tablazat?query=daily,${adjustDate_(dateStr)}`
   );
 };
 
@@ -28,12 +28,12 @@ const MNB = (currency: Currency = "GBP", dateStr: string = "2021.04.18.") => {
  * @return Current Coinmarketcap price of a crypto
  * @customfunction
  */
-const CRYPTO = (crypto = "bitcoin") => {
+const crypto = (crypto = "bitcoin") => {
   // console.log(`Input crypto: ${crypto}`);
   const hyphenedName = crypto.replace(/\s/g, "-");
 
   // https://coinmarketcap.com/currencies/bitcoin/
-  return readCryptoPrice(
+  return readCryptoPrice_(
     `https://coinmarketcap.com/currencies/${hyphenedName}`
   );
 };
@@ -41,7 +41,7 @@ const CRYPTO = (crypto = "bitcoin") => {
 /**
  * Adjust date to previous Friday if it was weekend
  */
-const adjustDate = (dateStr: string) => {
+const adjustDate_ = (dateStr: string) => {
   let date = new Date(dateStr);
   // console.log(`Day: ${date.getDay()}`);
   let offset = 0;
@@ -65,11 +65,10 @@ const adjustDate = (dateStr: string) => {
   return adjustedDate;
 };
 
-const readMNBPrice = (currency: Currency, url: string): number => {
-  const resp = UrlFetchApp.fetch(url).getContentText();
-  const $ = Cheerio.load(resp);
-  const currencyPrice = convertNumber(
-    $(priceSelector(currency)).text(),
+const readMNBPrice_ = (currency: Currency, url: string): number => {
+  const $ = cheerioLoad_(url);
+  const currencyPrice = convertNumber_(
+    $(priceSelector_(currency)).text(),
     "hu-HU"
   );
 
@@ -78,10 +77,9 @@ const readMNBPrice = (currency: Currency, url: string): number => {
   return currencyPrice;
 };
 
-const readCryptoPrice = (url: string): number => {
-  const resp = UrlFetchApp.fetch(url).getContentText();
-  const $ = Cheerio.load(resp);
-  const cryptoPrice = convertNumber(
+const readCryptoPrice_ = (url: string): number => {
+  const $ = cheerioLoad_(url);
+  const cryptoPrice = convertNumber_(
     $(".priceSection > .priceTitle > .priceValue > span").text()
   );
 
@@ -93,7 +91,7 @@ const readCryptoPrice = (url: string): number => {
 /**
  * Courtesy: https://tutorial.eyehunts.com/js/locale-string-to-number-javascript-example-code/
  */
-const convertNumber = (numStr: string, locale = "en-US") => {
+const convertNumber_ = (numStr: string, locale = "en-US") => {
   const { format } = new Intl.NumberFormat(locale);
   const match = /^0(.)1$/.exec(format(0.1));
   if (match) {
@@ -107,7 +105,7 @@ const convertNumber = (numStr: string, locale = "en-US") => {
 /**
  * Provide price CSS selector based on given currency
  */
-const priceSelector = (currency: Currency) => {
+const priceSelector_ = (currency: Currency) => {
   let index = 0;
   switch (currency) {
     case "GBP":
@@ -120,11 +118,17 @@ const priceSelector = (currency: Currency) => {
       index = 21;
       break;
     default:
-      assertUnreachable(currency);
+      assertUnreachable_(currency);
   }
   return `#main > div > div > table > tbody > tr > td:nth-child(${index})`;
 };
 
-const assertUnreachable = (value: never): never => {
+/**
+ * Load url with Cheerio
+ */
+const cheerioLoad_ = (url: string) =>
+  Cheerio.load(UrlFetchApp.fetch(url).getContentText());
+
+const assertUnreachable_ = (value: never): never => {
   throw new Error(`Statement should be unreachable! Uncovered case ${value}`);
 };

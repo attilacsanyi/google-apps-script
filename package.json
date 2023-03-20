@@ -23,7 +23,7 @@
   "homepage": "https://github.com/attilacsanyi/google-apps-script#readme",
   "devDependencies": {
     "@types/cheerio": "0.22.31",
-    "@types/google-apps-script": "1.0.57",
+    "@types/google-apps-script": "1.0.59",
     "cheerio": "1.0.0-rc.12"
   }
 }
