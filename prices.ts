@@ -3,6 +3,13 @@ import * as Cheerio from "cheerio";
 /** Supported currencies */
 type Currency = "GBP" | "USD" | "EUR";
 
+const cacheTimeoutInSec = 5 * 60; // 5 min
+
+/**
+ * Gets a cache that is common to all users of the script.
+ * Docs: https://developers.google.com/apps-script/reference/cache/cache-service?hl=en
+ */
+const getCache_ = () => CacheService.getScriptCache();
 /**
  * Return MNB price of a currency on a specific date.
  *
@@ -28,14 +35,28 @@ const mnb = (currency: Currency = "GBP", dateStr: string = "2021.04.18.") => {
  * @return Current Coinmarketcap price of a crypto
  * @customfunction
  */
-const crypto = (crypto = "bitcoin") => {
+const crypto = (crypto = "bitcoin"): number => {
+  let cryptoPrice: number = -1;
   // console.log(`Input crypto: ${crypto}`);
-  const hyphenedName = crypto.replace(/\s/g, "-");
+  const hyphenedName = crypto.trim().replace(/\s/g, "-");
 
-  // https://coinmarketcap.com/currencies/bitcoin/
-  return readCryptoPrice_(
-    `https://coinmarketcap.com/currencies/${hyphenedName}`
-  );
+  const cryptoCacheKey = `${hyphenedName.toLowerCase()}`;
+
+  const cachedPrice = getCache_().get(cryptoCacheKey);
+
+  if (cachedPrice) {
+    cryptoPrice = convertNumber_(cachedPrice);
+  } else {
+    // https://coinmarketcap.com/currencies/bitcoin/
+    const freshPrice = readCryptoPrice_(
+      `https://coinmarketcap.com/currencies/${hyphenedName}`
+    );
+
+    cryptoPrice = freshPrice;
+    getCache_().put(cryptoCacheKey, `${freshPrice}`, cacheTimeoutInSec);
+  }
+
+  return cryptoPrice;
 };
 
 /**
