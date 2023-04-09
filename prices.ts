@@ -14,18 +14,41 @@ const getCache_ = () => CacheService.getScriptCache();
  * Return MNB price of a currency on a specific date.
  *
  * @param {text} currency The currency (GBP, EUR, USD, etc.).
- * @param {date} dateStr The currency value in HUF on this date.
+ * @param {date} dateStr The currency value in HUF on this date or today.
  * @return MNB price of a currency on the  date
  * @customfunction
  */
-const mnb = (currency: Currency = "GBP", dateStr: string = "2021.04.18.") => {
+const mnb = (
+  currency: Currency = "GBP",
+  dateStr: string = formatDate_(new Date())
+) => {
   // console.log(`Input currency: ${currency}, date: ${dateStr}`);
 
-  // https://www.mnb.hu/arfolyam-tablazat?query=daily,2023.02.14.
-  return readMNBPrice_(
-    currency,
-    `https://www.mnb.hu/arfolyam-tablazat?query=daily,${adjustDate_(dateStr)}`
-  );
+  const cacheKey = `${currency}_${dateStr}`;
+  const cachedPrice = getCache_().get(cacheKey);
+
+  if (cachedPrice) return convertNumber_(cachedPrice);
+
+  let freshPrice = 0;
+
+  let weekdayDateOrHolidayStr = backDate_(dateStr);
+
+  do {
+    freshPrice = readMNBPrice_(
+      currency,
+      `https://www.mnb.hu/arfolyam-tablazat?query=daily,${weekdayDateOrHolidayStr}`
+    );
+
+    const weekdayDateOrHoliday = new Date(weekdayDateOrHolidayStr);
+    // Decrease one day due to holiday
+    weekdayDateOrHoliday.setDate(weekdayDateOrHoliday.getDate() - 1);
+
+    weekdayDateOrHolidayStr = formatDate_(weekdayDateOrHoliday);
+  } while (freshPrice === 0);
+
+  // console.log(`MNB Price: ${mnbPrice}`);
+  getCache_().put(cacheKey, `${freshPrice}`, cacheTimeoutInSec);
+  return freshPrice;
 };
 
 /**
@@ -55,9 +78,9 @@ const crypto = (crypto = "bitcoin"): number => {
 };
 
 /**
- * Adjust date to previous Friday if it was weekend
+ * Back date to previous Friday if it was weekend
  */
-const adjustDate_ = (dateStr: string) => {
+const backDate_ = (dateStr: string) => {
   let date = new Date(dateStr);
   // console.log(`Day: ${date.getDay()}`);
   let offset = 0;
@@ -70,15 +93,19 @@ const adjustDate_ = (dateStr: string) => {
 
   date.setDate(date.getDate() - offset);
 
-  const adjustedDate = `${date.toLocaleDateString("hu-HU", {
+  return formatDate_(date);
+};
+
+const formatDate_ = (date: Date): string => {
+  const formattedDate = `${date.toLocaleDateString("hu-HU", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   })}`.replace(/ /g, "");
 
-  // console.log(`Adjusted date: ${adjustedDate}`);
+  // console.log(`Formatted date: ${formattedDate}`);
 
-  return adjustedDate;
+  return formattedDate;
 };
 
 const readMNBPrice_ = (currency: Currency, url: string): number => {
