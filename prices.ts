@@ -36,27 +36,22 @@ const mnb = (currency: Currency = "GBP", dateStr: string = "2021.04.18.") => {
  * @customfunction
  */
 const crypto = (crypto = "bitcoin"): number => {
-  let cryptoPrice: number = -1;
   // console.log(`Input crypto: ${crypto}`);
   const hyphenedName = crypto.trim().replace(/\s/g, "-");
 
-  const cryptoCacheKey = `${hyphenedName.toLowerCase()}`;
+  const cacheKey = `${hyphenedName.toLowerCase()}`;
+  const cachedPrice = getCache_().get(cacheKey);
 
-  const cachedPrice = getCache_().get(cryptoCacheKey);
+  if (cachedPrice) return convertNumber_(cachedPrice);
 
-  if (cachedPrice) {
-    cryptoPrice = convertNumber_(cachedPrice);
-  } else {
-    // https://coinmarketcap.com/currencies/bitcoin/
-    const freshPrice = readCryptoPrice_(
-      `https://coinmarketcap.com/currencies/${hyphenedName}`
-    );
+  // https://coinmarketcap.com/currencies/bitcoin/
+  const freshPrice = readCryptoPrice_(
+    `https://coinmarketcap.com/currencies/${hyphenedName}`
+  );
 
-    cryptoPrice = freshPrice;
-    getCache_().put(cryptoCacheKey, `${freshPrice}`, cacheTimeoutInSec);
-  }
+  getCache_().put(cacheKey, `${freshPrice}`, cacheTimeoutInSec);
 
-  return cryptoPrice;
+  return freshPrice;
 };
 
 /**
